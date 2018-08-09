@@ -1410,7 +1410,7 @@ module From_input = functor (I: S.INPUT) -> struct
 
   open Memory
 
-  let openstream fd =
+  let openstream size_opt fd = 
     let buffer = alloc Footer.sizeof in
     read fd buffer >>= fun () ->
     Footer.unmarshal buffer >>|= fun footer ->
@@ -1465,6 +1465,9 @@ module From_input = functor (I: S.INPUT) -> struct
         sector 0 (fun () -> block (M.remove s blocks) andthen) in
     block phys_to_virt (fun () ->
     let buffer = alloc Footer.sizeof in
+    (match size_opt with
+    | None -> return ()
+    | Some s -> skip_to fd (Int64.mul (Int64.div (Int64.sub s 1L) 512L) 512L)) >>= fun () ->
     read fd buffer >>= fun () ->
     Footer.unmarshal buffer >>|= fun footer ->
     Fragment.Footer footer >+> fun () ->
